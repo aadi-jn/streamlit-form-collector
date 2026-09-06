@@ -4,11 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-v1 skeleton scaffolded. All modules below exist. `forms.py` currently holds a **placeholder**
-form (`contact_v1`) that exercises every validation type — swap in the real form when it's
-defined (add a `FORMS` entry, point `DEFAULT_FORM_ID` at it). Not yet wired to a live
-Supabase project or deployed. `pytest` (validation tests) passes offline; `app.py` /
-`pages/1_Admin.py` need `.streamlit/secrets.toml` to run.
+v1 works end-to-end against a live Supabase project (ref `ocprrutmukogmtykgbfg`), verified:
+anon insert OK, anon SELECT blocked by RLS, admin page reads + CSV. `forms.py` still holds
+the **placeholder** `contact_v1` form — swap in the real form when defined (add a `FORMS`
+entry, point `DEFAULT_FORM_ID` at it). **Not yet deployed** to Streamlit Community Cloud.
+`pytest` (44 validation tests) passes offline; `app.py` / `pages/1_Admin.py` need
+`.streamlit/secrets.toml`. `scripts/smoke_supabase.py` re-checks the DB security contract.
 
 ## What this app is
 
@@ -79,6 +80,12 @@ One row per submission in `public.submissions`:
 - Secrets: local dev uses `.streamlit/secrets.toml` (gitignored); production uses the
   Streamlit Community Cloud secrets manager. Keys: Supabase URL, anon key, service_role
   key, and the admin page password.
+- **Two gotchas we hit (both fixed):** (1) `schema.sql` must `grant insert ... to anon` —
+  the RLS policy alone isn't enough, and Supabase's default privileges don't reliably
+  cover tables created in the SQL editor. (2) `insert_submission` must use
+  `returning=ReturnMethod.minimal`; with no anon SELECT policy, the default representation
+  read-back after INSERT fails with a misleading `42501 "new row violates row-level
+  security policy"`.
 
 ## Deployment
 

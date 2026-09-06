@@ -2,10 +2,11 @@
 
 **Author:** Aadi Jain   **Date:** 2026-09-06   **Est. effort:** ~3–5 days for a working v1
 
-**Status (2026-09-06):** v1 code skeleton built — all modules, a placeholder form
-(`contact_v1`), and 44 passing validation tests. Remaining: stand up the Supabase project,
-run end-to-end against it, define the real first form, deploy to Streamlit Community Cloud,
-and walk the definition-of-done checklist. See `CLAUDE.md` for the as-built architecture.
+**Status (2026-09-06):** v1 works end-to-end against a live Supabase project — all modules,
+a placeholder form (`contact_v1`), 44 passing validation tests, and the DoD security /
+insert / admin / CSV checks all verified. Remaining: define the real first form, deploy to
+Streamlit Community Cloud, and re-run the DoD on the deployed app. See `CLAUDE.md` for the
+as-built architecture.
 
 ---
 
@@ -126,10 +127,10 @@ A deployed Streamlit app with:
 
 ## Suggested build order
 
-1. ~~Create Supabase project; run `schema.sql`; confirm RLS with a manual insert.~~ — **next**
-2. ~~`db.py` — connect from a local script, insert one row.~~ *(module written; needs a live project to test)*
-3. ✅ ~~`forms.py` + `validation.py` — define the first form and its rules; unit-test `validate()`.~~ *(placeholder form; 44 tests pass)*
+1. ✅ ~~Create Supabase project; run `schema.sql`; confirm RLS.~~ *(ref `ocprrutmukogmtykgbfg`; `scripts/smoke_supabase.py` passes)*
+2. ✅ ~~`db.py` — connect, insert a row.~~
+3. ✅ ~~`forms.py` + `validation.py` — first form + rules; unit-test `validate()`.~~ *(placeholder `contact_v1`; 44 tests)*
 4. ✅ ~~`app.py` — render fields, wire live validation, disable submit until clean.~~
-5. ~~Wire submit → `insert_submission()`; test end-to-end locally.~~ *(wired; end-to-end test pending Supabase)*
-6. ✅ ~~`admin.py` — password gate + table + CSV download.~~ *(built as `pages/1_Admin.py`)*
-7. Deploy to Streamlit Community Cloud; move keys into secrets; re-run the DoD checklist.
+5. ✅ ~~Wire submit → `insert_submission()`; test end-to-end.~~ *(5 submissions via AppTest → 5 rows, JSON verified)*
+6. ✅ ~~`admin.py` — password gate + table + CSV download.~~ *(`pages/1_Admin.py`; CSV row count matches)*
+7. **Deploy to Streamlit Community Cloud; move keys into secrets; re-run the DoD on the live app.** — next
