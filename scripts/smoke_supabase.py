@@ -21,6 +21,7 @@ import sys
 import tomllib
 from pathlib import Path
 
+from postgrest.types import ReturnMethod
 from supabase import create_client
 
 SECRETS = Path(__file__).resolve().parent.parent / ".streamlit" / "secrets.toml"
@@ -41,7 +42,8 @@ def main() -> int:
     # 1. anon insert
     try:
         anon.table("submissions").insert(
-            {"form_id": "smoke_test", "data": {"hello": "world"}, "user_agent": "smoke"}
+            {"form_id": "smoke_test", "data": {"hello": "world"}, "user_agent": "smoke"},
+            returning=ReturnMethod.minimal,
         ).execute()
         print("PASS  anon can insert")
     except Exception as exc:  # noqa: BLE001

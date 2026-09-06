@@ -53,7 +53,7 @@ answers = pd.json_normalize(frame["data"]).add_prefix("data.")
 table = pd.concat([frame.drop(columns=["data"]), answers], axis=1)
 
 st.caption(f"{len(table)} submission(s)")
-st.dataframe(table, use_container_width=True, hide_index=True)
+st.dataframe(table, width="stretch", hide_index=True)
 
 st.download_button(
     "Download CSV",

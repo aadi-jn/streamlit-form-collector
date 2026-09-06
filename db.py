@@ -17,6 +17,7 @@ from __future__ import annotations
 from typing import Any
 
 import streamlit as st
+from postgrest.types import ReturnMethod
 from supabase import Client, create_client
 
 
@@ -36,10 +37,17 @@ def _client(role: str) -> Client:
 def insert_submission(
     form_id: str, data: dict[str, Any], user_agent: str | None = None
 ) -> dict[str, Any]:
-    """Insert one submission using the anon client. Returns the stored row."""
+    """Insert one submission using the anon client.
+
+    ``returning=minimal`` is required: the anon role has no SELECT policy, so a
+    representation read-back would fail with a misleading RLS error. Returns the
+    payload that was sent (the DB fills in ``id`` / ``submitted_at`` server-side).
+    """
     payload = {"form_id": form_id, "data": data, "user_agent": user_agent}
-    response = _client("anon").table("submissions").insert(payload).execute()
-    return response.data[0] if response.data else payload
+    _client("anon").table("submissions").insert(
+        payload, returning=ReturnMethod.minimal
+    ).execute()
+    return payload
 
 
 def fetch_submissions() -> list[dict[str, Any]]:

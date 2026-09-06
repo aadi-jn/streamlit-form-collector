@@ -34,3 +34,9 @@ create policy "anon can insert submissions"
     for insert
     to anon
     with check (true);
+
+-- RLS gates *which* rows a role may touch; the table-level GRANT is what lets
+-- the role touch the table at all. Supabase's default privileges don't always
+-- cover tables created from the SQL editor, so grant INSERT explicitly.
+-- Deliberately NOT granting SELECT to anon.
+grant insert on table public.submissions to anon;
