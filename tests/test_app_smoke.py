@@ -25,11 +25,19 @@ def _fresh():
 def test_renders_all_fields_no_error_on_first_load():
     at = _fresh()
     assert [t.value for t in at.title] == ["Contact us"]
-    assert {w.label for w in at.text_input} == {
-        "Full name", "Email", "Phone", "LinkedIn profile", "Website (optional)"
-    }
-    assert not list(at.caption)  # no error captions yet
+    starts = {w.label.split(" :red")[0].strip() for w in at.text_input}
+    assert starts == {"Full name", "Email", "Phone", "LinkedIn profile", "Website"}
+    # only the required-legend caption, no field error captions
+    assert [c.value for c in at.caption] == ["Fields marked :red[\\*] are required."]
     assert not at.exception
+
+
+def test_required_fields_get_an_asterisk_optional_ones_do_not():
+    at = _fresh()
+    marked = {w.label.split(" :red")[0].strip() for w in at.text_input if ":red[\\*]" in w.label}
+    assert marked == {"Full name", "Email", "Phone"}  # not LinkedIn, not Website
+    assert "\\*" in at.number_input[0].label  # Age
+    assert "\\*" in at.selectbox[0].label  # Topic
 
 
 def test_submit_button_is_enabled_even_when_form_is_empty():
@@ -52,7 +60,8 @@ def test_invalid_submit_lists_every_error_and_does_not_raise():
     assert not at.exception
     blob = " ".join(e.value for e in at.error)
     assert "Couldn't submit" in blob
-    assert "Email" in blob and "Phone" in blob and "LinkedIn" in blob
+    assert "Email" in blob and "Phone" in blob and "Age" in blob
+    assert "LinkedIn" not in blob  # optional, left blank
 
 
 def test_fully_valid_form_shows_no_errors():
@@ -62,8 +71,6 @@ def test_fully_valid_form_shows_no_errors():
     at.text_input(key="contact_v1__phone").set_value("9650424680").run()
     at.number_input(key="contact_v1__age").set_value(36).run()
     at.selectbox(key="contact_v1__topic").set_value("Sales").run()
-    at.text_input(key="contact_v1__linkedin").set_value(
-        "https://www.linkedin.com/in/aadikjain/"
-    ).run()
-    # Every field valid -> no error captions remain.
-    assert not [c.value for c in at.caption]
+    # linkedin + website left blank (both optional)
+    # No field error captions — only the required-fields legend remains.
+    assert [c.value for c in at.caption] == ["Fields marked :red[\\*] are required."]

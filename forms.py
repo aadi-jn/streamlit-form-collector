@@ -14,6 +14,9 @@ Each field is a dict:
         "rules":   list[Check],      # ordered; first failure wins
     }
 
+A field is treated as **required** (and gets a red asterisk in the UI) when
+``validation.required`` is present in its ``rules``.
+
 A form is a dict: ``{"id": str, "title": str, "fields": [...]}``.
 ``FORMS`` maps ``form_id -> form``. ``app.py`` renders ``DEFAULT_FORM_ID``.
 """
@@ -82,11 +85,11 @@ CONTACT_V1 = {
             "label": "LinkedIn profile",
             "widget": "text",
             "help": "e.g. https://www.linkedin.com/in/your-name",
-            "rules": [required, matches(LINKEDIN_RE, "Enter a linkedin.com/in/ profile URL")],
+            "rules": [matches(LINKEDIN_RE, "Enter a linkedin.com/in/ profile URL")],
         },
         {
             "name": "website",
-            "label": "Website (optional)",
+            "label": "Website",
             "widget": "text",
             "rules": [matches(URL_RE, "Enter a valid URL (including https://)")],
         },

@@ -25,7 +25,7 @@ import streamlit as st
 
 from db import insert_submission
 from forms import DEFAULT_FORM_ID, FORMS
-from validation import validate
+from validation import required, validate
 
 st.set_page_config(page_title="Form", page_icon="📝")
 
@@ -40,10 +40,14 @@ def _mark_touched(name: str) -> None:
     st.session_state.setdefault("_touched", set()).add(name)
 
 
+def _is_required(field: dict) -> bool:
+    return required in field.get("rules", [])
+
+
 def _render_field(field: dict) -> None:
     name = field["name"]
     key = _key(name)
-    label = field["label"]
+    label = field["label"] + (" :red[\\*]" if _is_required(field) else "")
     widget = field["widget"]
     help_text = field.get("help")
     on_change = lambda n=name: _mark_touched(n)  # noqa: E731
@@ -90,6 +94,7 @@ def _clear_form() -> None:
 
 
 st.title(form["title"])
+st.caption("Fields marked :red[\\*] are required.")
 
 if st.session_state.pop("_submitted_ok", False):
     st.success("Thanks — your response has been recorded.")
