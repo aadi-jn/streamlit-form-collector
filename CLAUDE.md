@@ -54,9 +54,16 @@ relies on this instead of callbacks:
    `{field_name: error_message}` for every field currently failing.
 3. Render each field's error immediately below it, but only once that field has been
    touched (track touched-state in `session_state` so the form isn't red on first load).
-4. The **Submit button is `disabled=` while the error dict is non-empty.**
-5. On submit, **re-run `validate()` server-side** before inserting — never trust the
-   disabled button alone.
+   Note: `st.text_input` / `st.number_input` commit their value (and fire `on_change`)
+   on **Enter or blur**, not per keystroke — validation refreshes then, not live per key.
+4. The **Submit button is always enabled.** Disabling it on `errors` looked right but
+   trapped the user: while the last-edited field still holds focus its value hasn't
+   reached the server, so `validate()` sees it blank *and* a disabled button eats the
+   click that would commit it. (Earlier design said disable-until-clean; this was the fix.)
+5. On submit, **re-run `validate()` server-side** before inserting — this is the only
+   real gate. Clicking Submit blurs/commits the focused field, so the check sees final
+   values; on failure, mark all fields touched and show every error (inline + a summary
+   `st.error`).
 
 Keep validation rules declarative in `forms.py` and the logic in `validation.py`. Adding a
 rule should not require touching `app.py`.

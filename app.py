@@ -6,10 +6,17 @@ lean on that instead of callbacks:
 1. Render each field with a stable ``key``; current values live in session_state.
 2. After rendering, call ``validate(form, values)`` for the whole form.
 3. Show each field's error immediately below it — but only once the field has
-   been touched, so the form isn't red on first load.
-4. The Submit button is ``disabled`` while any error remains.
-5. On submit we re-run ``validate()`` server-side before inserting — the
-   disabled button is a convenience, not a guarantee.
+   been touched, so the form isn't red on first load. A field "commits" its
+   value (and fires ``on_change``) on Enter or blur, not per keystroke — that's
+   a Streamlit limitation for text/number inputs.
+4. Because of (3), the Submit button is **always enabled**: disabling it would
+   trap the user whenever the last field they typed in still holds focus (its
+   value not yet sent to the server), and a disabled button also swallows the
+   click that would have committed that field.
+5. On submit we re-run ``validate()`` server-side. Clicking Submit blurs and
+   commits the focused field, so this sees the final values; if anything fails
+   we mark every field touched and show all errors inline. This server-side
+   check — not the button — is what blocks a bad submission.
 """
 
 from __future__ import annotations
@@ -91,20 +98,28 @@ touched: set[str] = st.session_state.setdefault("_touched", set())
 
 for field in form["fields"]:
     _render_field(field)
-    errors_so_far = validate(form, _collect_values())
     name = field["name"]
+    errors_so_far = validate(form, _collect_values())
     if name in touched and name in errors_so_far:
         st.caption(f":red[{errors_so_far[name]}]")
 
 errors = validate(form, _collect_values())
+if errors and touched:
+    st.warning("Some answers still need fixing — see the notes in red above.")
 
-if st.button("Submit", type="primary", disabled=bool(errors)):
-    # Never trust the disabled button alone — re-validate server-side.
+if st.button("Submit", type="primary"):
+    # The button is never disabled; this server-side check is the real gate.
     values = _collect_values()
     errors = validate(form, values)
     if errors:
-        st.session_state["_touched"] = set(f["name"] for f in form["fields"])
-        st.rerun()
+        # Reveal every outstanding error inline (this run) and keep them shown
+        # on the next run too.
+        st.session_state["_touched"] = {f["name"] for f in form["fields"]}
+        labels = {f["name"]: f["label"] for f in form["fields"]}
+        st.error(
+            "Couldn't submit — please fix:\n"
+            + "\n".join(f"- **{labels[n]}**: {m}" for n, m in errors.items())
+        )
     else:
         insert_submission(form["id"], values, _user_agent())
         st.session_state["_submitted_ok"] = True
