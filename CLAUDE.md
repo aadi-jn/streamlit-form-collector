@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-Pre-code. The only content so far is `PROJECT_BRIEF.md`, which defines the app being built.
-This file describes the **intended** architecture from that brief so future sessions don't
-re-derive it. Update the Commands section below once scaffolding exists, and revise the
-architecture here whenever it diverges from what actually gets built.
+v1 skeleton scaffolded. All modules below exist. `forms.py` currently holds a **placeholder**
+form (`contact_v1`) that exercises every validation type — swap in the real form when it's
+defined (add a `FORMS` entry, point `DEFAULT_FORM_ID` at it). Not yet wired to a live
+Supabase project or deployed. `pytest` (validation tests) passes offline; `app.py` /
+`pages/1_Admin.py` need `.streamlit/secrets.toml` to run.
 
 ## What this app is
 
@@ -22,24 +23,25 @@ Streamlit Community Cloud from a **public** GitHub repo.
 
 ## Commands
 
-_To be filled in once the project is scaffolded._ Expected shape:
-
 - Install: `pip install -r requirements.txt`
-- Run locally: `streamlit run app.py`
-- Tests: `pytest` (single test: `pytest tests/test_validation.py::test_name`)
+- Run locally: `streamlit run app.py` (needs `.streamlit/secrets.toml` — copy from
+  `.streamlit/secrets.toml.example`)
+- Tests: `pytest` (single test: `pytest tests/test_validation.py::test_validate_clean_form_returns_empty`)
+- Admin page: sidebar **Admin** entry, or `/Admin` — gated by `ADMIN_PASSWORD`
 
-## Intended architecture
+## Architecture
 
-Planned module layout (single-package, flat):
+Module layout (single-package, flat):
 
 | File | Responsibility |
 |---|---|
 | `app.py` | Public form page. Renders fields, runs live validation, gates submit. |
-| `admin.py` | Password-gated submissions table + CSV download. (Or a `pages/` entry.) |
-| `forms.py` | Declarative field definitions for each form: label, widget type, options, validation rules. Forms are **hard-coded here** in v1 — no form-builder UI, no DB-stored form config. |
-| `validation.py` | Small composable check functions (`required`, `is_email`, `in_range`, `matches`, ...) plus `validate(form, values) -> {field: error_message}`. Pure functions, no Streamlit or DB imports — keep it unit-testable. |
+| `pages/1_Admin.py` | Password-gated submissions table + CSV download (Streamlit multipage). Uses `pandas` to flatten `data` JSON into columns. |
+| `forms.py` | Declarative field definitions: `FORMS` maps `form_id -> {id, title, fields}`; each field is `{name, label, widget, options?, help?, rules}`. `DEFAULT_FORM_ID` is what `app.py` renders. Forms are **hard-coded here** in v1 — no form-builder UI, no DB-stored form config. |
+| `validation.py` | Composable checks — `required`, `is_email`, `is_phone`, `is_number`, `is_date`, and the factories `in_range(min, max)`, `matches(pattern, message)`, `one_of(options)` — plus `validate(form, values) -> {field: error_message}` (first failing rule per field wins). Each check is `(value) -> str | None`; blank passes every check except `required`. Pure functions, no Streamlit or DB imports. |
 | `db.py` | Supabase client construction + `insert_submission()` / `fetch_submissions()`. The only module that talks to Supabase. |
-| `schema.sql` | `submissions` table DDL + RLS policies. Run in the Supabase SQL editor. |
+| `schema.sql` | `submissions` table DDL + RLS policy. Re-runnable. Run in the Supabase SQL editor. |
+| `tests/test_validation.py` | Unit tests for every check and `validate()`. |
 
 ### The live-validation mechanic (core design point)
 

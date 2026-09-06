@@ -2,6 +2,11 @@
 
 **Author:** Aadi Jain   **Date:** 2026-09-06   **Est. effort:** ~3–5 days for a working v1
 
+**Status (2026-09-06):** v1 code skeleton built — all modules, a placeholder form
+(`contact_v1`), and 44 passing validation tests. Remaining: stand up the Supabase project,
+run end-to-end against it, define the real first form, deploy to Streamlit Community Cloud,
+and walk the definition-of-done checklist. See `CLAUDE.md` for the as-built architecture.
+
 ---
 
 ## 1. The question / goal
@@ -80,7 +85,7 @@ Validation rules live in one module (`validation.py`) as small composable functi
 A deployed Streamlit app with:
 
 - `app.py` — form page with live inline validation + submit.
-- `admin.py` (or a second page) — password-gated submissions table with CSV download.
+- `pages/1_Admin.py` — password-gated submissions table with CSV download (Streamlit multipage).
 - `forms.py` — the form's field definitions (label, type, rules, options).
 - `validation.py` — reusable validation functions + the `validate()` orchestrator.
 - `db.py` — Supabase client + `insert_submission()` / `fetch_submissions()`.
@@ -111,7 +116,8 @@ A deployed Streamlit app with:
 
 - **v2 validation:** cross-field rules (date ordering, conditional-required), uniqueness
   check against Supabase, min/max length.
-- What's the actual first form? (fields, options, exact rules) — needed before coding `forms.py`.
+- **What's the actual first form?** (fields, options, exact rules) — still open. The skeleton
+  ships a placeholder `contact_v1`; the real form replaces it as a new `FORMS` entry.
 - Expected volume? (affects whether Community Cloud is enough or we need a paid host.)
 - Do submissions ever need to be edited/corrected? (would add an admin edit view.)
 - Retention / privacy: how long is data kept, any PII handling requirements?
@@ -120,10 +126,10 @@ A deployed Streamlit app with:
 
 ## Suggested build order
 
-1. Create Supabase project; run `schema.sql`; confirm RLS with a manual insert.
-2. `db.py` — connect from a local script, insert one row.
-3. `forms.py` + `validation.py` — define the first form and its rules; unit-test `validate()`.
-4. `app.py` — render fields, wire live validation, disable submit until clean.
-5. Wire submit → `insert_submission()`; test end-to-end locally.
-6. `admin.py` — password gate + table + CSV download.
+1. ~~Create Supabase project; run `schema.sql`; confirm RLS with a manual insert.~~ — **next**
+2. ~~`db.py` — connect from a local script, insert one row.~~ *(module written; needs a live project to test)*
+3. ✅ ~~`forms.py` + `validation.py` — define the first form and its rules; unit-test `validate()`.~~ *(placeholder form; 44 tests pass)*
+4. ✅ ~~`app.py` — render fields, wire live validation, disable submit until clean.~~
+5. ~~Wire submit → `insert_submission()`; test end-to-end locally.~~ *(wired; end-to-end test pending Supabase)*
+6. ✅ ~~`admin.py` — password gate + table + CSV download.~~ *(built as `pages/1_Admin.py`)*
 7. Deploy to Streamlit Community Cloud; move keys into secrets; re-run the DoD checklist.
