@@ -8,15 +8,16 @@ v1 works end-to-end against a live Supabase project (ref `ocprrutmukogmtykgbfg`)
 anon insert OK, anon SELECT blocked by RLS, admin page reads + CSV. `forms.py` still holds
 the **placeholder** `contact_v1` form — swap in the real form when defined (add a `FORMS`
 entry, point `DEFAULT_FORM_ID` at it). **Not yet deployed** to Streamlit Community Cloud.
-`pytest` (44 validation tests) passes offline; `app.py` / `pages/1_Admin.py` need
-`.streamlit/secrets.toml`. `scripts/smoke_supabase.py` re-checks the DB security contract.
+`pytest` (50 tests — `test_validation.py` pure + `test_app_smoke.py` via Streamlit
+`AppTest`) passes offline; `app.py` / `pages/1_Admin.py` need `.streamlit/secrets.toml`.
+`scripts/smoke_supabase.py` re-checks the DB security contract against the live project.
 
 ## What this app is
 
 A self-hosted form-collection app: a public (no-login) Streamlit form that validates input
-**live as the user types**, shows inline errors, blocks submission until clean, and stores
-each valid submission in a Supabase Postgres database. A separate password-gated page lets
-the owner review submissions and export CSV. See `PROJECT_BRIEF.md` for full scope,
+as the user moves through it, shows inline errors, blocks a bad submission server-side, and
+stores each valid submission in a Supabase Postgres database. A separate password-gated page
+lets the owner review submissions and export CSV. See `PROJECT_BRIEF.md` for full scope,
 definition of done, and what is explicitly out of scope for v1.
 
 Stack: Streamlit (UI + server), Supabase (`supabase-py` client) over Postgres, deployed on
@@ -38,11 +39,13 @@ Module layout (single-package, flat):
 |---|---|
 | `app.py` | Public form page. Renders fields, runs live validation, gates submit. |
 | `pages/1_Admin.py` | Password-gated submissions table + CSV download (Streamlit multipage). Uses `pandas` to flatten `data` JSON into columns. |
-| `forms.py` | Declarative field definitions: `FORMS` maps `form_id -> {id, title, fields}`; each field is `{name, label, widget, options?, help?, rules}`. `DEFAULT_FORM_ID` is what `app.py` renders. Forms are **hard-coded here** in v1 — no form-builder UI, no DB-stored form config. |
+| `forms.py` | Declarative field definitions: `FORMS` maps `form_id -> {id, title, fields}`; each field is `{name, label, widget, options?, help?, rules}`. A field is **required** (and shows a red `*`) iff `validation.required` is in its `rules`. `DEFAULT_FORM_ID` is what `app.py` renders. Forms are **hard-coded here** in v1 — no form-builder UI, no DB-stored form config. |
 | `validation.py` | Composable checks — `required`, `is_email`, `is_phone`, `is_number`, `is_date`, and the factories `in_range(min, max)`, `matches(pattern, message)`, `one_of(options)` — plus `validate(form, values) -> {field: error_message}` (first failing rule per field wins). Each check is `(value) -> str | None`; blank passes every check except `required`. Pure functions, no Streamlit or DB imports. |
 | `db.py` | Supabase client construction + `insert_submission()` / `fetch_submissions()`. The only module that talks to Supabase. |
-| `schema.sql` | `submissions` table DDL + RLS policy. Re-runnable. Run in the Supabase SQL editor. |
-| `tests/test_validation.py` | Unit tests for every check and `validate()`. |
+| `schema.sql` | `submissions` table DDL + RLS policy + `grant insert ... to anon`. Re-runnable. Run in the Supabase SQL editor. |
+| `tests/test_validation.py` | Pure unit tests for every check and `validate()`. |
+| `tests/test_app_smoke.py` | `AppTest` checks: render, required asterisks, live errors, invalid-submit path (no DB). |
+| `scripts/smoke_supabase.py` | Against a live project: anon can insert, anon cannot SELECT, service_role can read. |
 
 ### The live-validation mechanic (core design point)
 
@@ -56,6 +59,8 @@ relies on this instead of callbacks:
    touched (track touched-state in `session_state` so the form isn't red on first load).
    Note: `st.text_input` / `st.number_input` commit their value (and fire `on_change`)
    on **Enter or blur**, not per keystroke — validation refreshes then, not live per key.
+   Required fields (those with `required` in `rules`) render a red `:red[\*]` in the label,
+   with a legend caption under the title.
 4. The **Submit button is always enabled.** Disabling it on `errors` looked right but
    trapped the user: while the last-edited field still holds focus its value hasn't
    reached the server, so `validate()` sees it blank *and* a disabled button eats the
@@ -105,4 +110,6 @@ access grants.
 
 - `validation.py` stays free of Streamlit and Supabase imports.
 - `db.py` is the single choke point for Supabase access.
-- New forms = new entries in `forms.py`, nothing else.
+- New forms = new entries in `forms.py` (+ repoint `DEFAULT_FORM_ID`), nothing else.
+- Required-ness is expressed one way only: put `required` in the field's `rules`. `app.py`
+  derives the asterisk from that — no separate `required: True` flag.

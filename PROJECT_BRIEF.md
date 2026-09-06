@@ -3,10 +3,10 @@
 **Author:** Aadi Jain   **Date:** 2026-09-06   **Est. effort:** ~3–5 days for a working v1
 
 **Status (2026-09-06):** v1 works end-to-end against a live Supabase project — all modules,
-a placeholder form (`contact_v1`), 44 passing validation tests, and the DoD security /
-insert / admin / CSV checks all verified. Remaining: define the real first form, deploy to
-Streamlit Community Cloud, and re-run the DoD on the deployed app. See `CLAUDE.md` for the
-as-built architecture.
+a placeholder form (`contact_v1`, required fields flagged with a red `*`), 50 passing tests,
+and the DoD security / insert / admin / CSV checks all verified. Remaining: define the real
+first form, deploy to Streamlit Community Cloud, and re-run the DoD on the deployed app.
+See `CLAUDE.md` for the as-built architecture.
 
 ---
 
@@ -70,16 +70,27 @@ validation logic or where the data lands. Owning the app means:
 Streamlit re-runs the whole script top-to-bottom on every widget interaction. We use that:
 
 1. Render each field with a `key`; read current values from `st.session_state`.
+   Required fields (those with `required` in their rules) show a red `*`.
 2. After rendering, run a `validate(values)` function that returns
    `{field_name: error_message}` for every field currently failing.
-3. Render each field's error immediately below it (e.g. `st.caption` in red, or
-   `st.error`) whenever that field has been touched.
-4. The **Submit button is disabled** until `validate()` returns no errors.
-5. On submit: re-validate server-side, then `INSERT` into Supabase. Show a success
-   message and clear the form.
+3. Render each field's error immediately below it (`st.caption` in red) once that
+   field has been touched. Note: text/number inputs commit on Enter or blur, so this
+   refreshes as the user moves between fields, not per keystroke.
+4. The **Submit button stays enabled** — see below.
+5. On submit: re-validate server-side (this is the real gate; clicking Submit commits
+   the focused field). If clean, `INSERT` into Supabase, show a success message, clear
+   the form. If not, reveal every error inline plus a summary and write nothing.
+
+> **Revised from the original plan:** the Submit button was going to be *disabled until
+> clean*. In practice that trapped users — Streamlit doesn't send a field's value to the
+> server until Enter/blur, so a fully-typed form whose last field still had focus showed
+> no errors *and* a permanently greyed-out button (which also swallowed the click that
+> would have committed the field). The server-side re-validate in step 5 is the guarantee;
+> the button no longer needs to be the gate.
 
 Validation rules live in one module (`validation.py`) as small composable functions
-(`required`, `is_email`, `in_range`, `matches`, …) so they're easy to test and reuse.
+(`required`, `is_email`, `is_phone`, `is_number`, `is_date`, `in_range`, `matches`,
+`one_of`) so they're easy to test and reuse.
 
 ## 6. Deliverable
 
@@ -129,8 +140,8 @@ A deployed Streamlit app with:
 
 1. ✅ ~~Create Supabase project; run `schema.sql`; confirm RLS.~~ *(ref `ocprrutmukogmtykgbfg`; `scripts/smoke_supabase.py` passes)*
 2. ✅ ~~`db.py` — connect, insert a row.~~
-3. ✅ ~~`forms.py` + `validation.py` — first form + rules; unit-test `validate()`.~~ *(placeholder `contact_v1`; 44 tests)*
-4. ✅ ~~`app.py` — render fields, wire live validation, disable submit until clean.~~
+3. ✅ ~~`forms.py` + `validation.py` — first form + rules; unit-test `validate()`.~~ *(placeholder `contact_v1`; 50 tests)*
+4. ✅ ~~`app.py` — render fields, wire live validation, gate submit via server-side re-validate.~~
 5. ✅ ~~Wire submit → `insert_submission()`; test end-to-end.~~ *(5 submissions via AppTest → 5 rows, JSON verified)*
 6. ✅ ~~`admin.py` — password gate + table + CSV download.~~ *(`pages/1_Admin.py`; CSV row count matches)*
 7. **Deploy to Streamlit Community Cloud; move keys into secrets; re-run the DoD on the live app.** — next

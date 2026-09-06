@@ -1,7 +1,7 @@
 # Form Collector
 
-A self-hosted form app: a public (no-login) Streamlit form that validates input **live as
-you type**, shows inline errors, blocks submission until clean, and stores each valid
+A self-hosted form app: a public (no-login) Streamlit form that validates input as you move
+through it, shows inline errors, blocks a bad submission server-side, and stores each valid
 submission in a Supabase Postgres database. A separate password-gated page lets the owner
 review submissions and export CSV.
 
@@ -17,8 +17,9 @@ See [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md) for full scope and the definition of 
 | `forms.py` | Declarative field definitions. Forms are hard-coded here in v1. |
 | `validation.py` | Composable check functions + `validate()`. No Streamlit/Supabase imports. |
 | `db.py` | The only module that talks to Supabase. |
-| `schema.sql` | `submissions` table DDL + RLS policy. Run in the Supabase SQL editor. |
-| `tests/` | Unit tests for `validation.py`. |
+| `schema.sql` | `submissions` table DDL + RLS policy + `grant insert` to `anon`. Run in the Supabase SQL editor. |
+| `tests/` | `test_validation.py` (pure) + `test_app_smoke.py` (Streamlit `AppTest`). |
+| `scripts/smoke_supabase.py` | Checks the DB security contract against a live project. |
 
 ## Setup
 
@@ -60,8 +61,9 @@ The public form is at `/`; the admin page is in the sidebar as **Admin** (or
 ## Tests
 
 ```bash
-pytest                                            # all
+pytest                                            # all (50; offline, no DB needed)
 pytest tests/test_validation.py::test_one_of      # single test
+python scripts/smoke_supabase.py                  # DB security contract (needs secrets.toml)
 ```
 
 ## Deploy (Streamlit Community Cloud)
@@ -75,8 +77,9 @@ pytest tests/test_validation.py::test_one_of      # single test
 
 ## Adding a form
 
-Add a new entry to `FORMS` in `forms.py` and point `DEFAULT_FORM_ID` at it. New validation
-rules are small functions in `validation.py`. Nothing else needs to change.
+Add a new entry to `FORMS` in `forms.py` and point `DEFAULT_FORM_ID` at it. A field is
+required (and shows a red `*`) when `required` is in its `rules`. New validation rules are
+small functions in `validation.py`. Nothing else needs to change.
 
 ## Definition of done checklist
 
