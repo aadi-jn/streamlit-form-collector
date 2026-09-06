@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-v1 works end-to-end against a live Supabase project (ref `ocprrutmukogmtykgbfg`), verified:
-anon insert OK, anon SELECT blocked by RLS, admin page reads + CSV. `forms.py` still holds
-the **placeholder** `contact_v1` form — swap in the real form when defined (add a `FORMS`
-entry, point `DEFAULT_FORM_ID` at it). **Not yet deployed** to Streamlit Community Cloud.
+v1 confirmed working in the browser against the live Supabase project (ref
+`ocprrutmukogmtykgbfg`): live validation, submit, anon insert OK, anon SELECT blocked by
+RLS, admin page reads + CSV. `forms.py` still holds the **placeholder** `contact_v1` form —
+swap in the real form when defined (add a `FORMS` entry, point `DEFAULT_FORM_ID` at it).
+**Not yet deployed** to Streamlit Community Cloud.
 `pytest` (50 tests — `test_validation.py` pure + `test_app_smoke.py` via Streamlit
 `AppTest`) passes offline; `app.py` / `pages/1_Admin.py` need `.streamlit/secrets.toml`.
 `scripts/smoke_supabase.py` re-checks the DB security contract against the live project.

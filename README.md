@@ -83,11 +83,12 @@ small functions in `validation.py`. Nothing else needs to change.
 
 ## Definition of done checklist
 
-From `PROJECT_BRIEF.md` — verify after deploy:
+From `PROJECT_BRIEF.md`. All but the last are done (browser + automated, against the live
+project); the last needs the deployed app.
 
-- [ ] Invalid input shows the right inline error and blocks submit.
-- [ ] Valid input creates exactly one row in `submissions` with the expected JSON.
-- [ ] The admin page lists all submissions; CSV export row count matches the table.
-- [ ] Insert 5 known test submissions → `select count(*) from submissions` = 5, JSON matches.
-- [ ] The `anon` key cannot read submissions (RLS blocks `SELECT`).
+- [x] Invalid input shows the right inline error and blocks submit.
+- [x] Valid input creates exactly one row in `submissions` with the expected JSON.
+- [x] The admin page lists all submissions; CSV export row count matches the table.
+- [x] Insert 5 known test submissions → `select count(*) from submissions` = 5, JSON matches.
+- [x] The `anon` key cannot read submissions (RLS blocks `SELECT`).
 - [ ] App runs on a clean machine from this README alone.

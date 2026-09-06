@@ -2,11 +2,11 @@
 
 **Author:** Aadi Jain   **Date:** 2026-09-06   **Est. effort:** ~3–5 days for a working v1
 
-**Status (2026-09-06):** v1 works end-to-end against a live Supabase project — all modules,
-a placeholder form (`contact_v1`, required fields flagged with a red `*`), 50 passing tests,
-and the DoD security / insert / admin / CSV checks all verified. Remaining: define the real
-first form, deploy to Streamlit Community Cloud, and re-run the DoD on the deployed app.
-See `CLAUDE.md` for the as-built architecture.
+**Status (2026-09-06):** v1 confirmed working in the browser against the live Supabase
+project — all modules, a placeholder form (`contact_v1`, required fields flagged with a
+red `*`), 50 passing tests, and every DoD check except "runs on a clean machine" (needs
+the deploy) done. Remaining: define the real first form, deploy to Streamlit Community
+Cloud, re-run the last DoD check there. See `CLAUDE.md` for the as-built architecture.
 
 ---
 
@@ -106,13 +106,16 @@ A deployed Streamlit app with:
 
 ## 7. Definition of done
 
-- [ ] Submitting a form with invalid input shows the right inline error and blocks submit.
-- [ ] Submitting valid input creates exactly one row in `submissions` with the expected JSON.
-- [ ] The admin page lists all submissions and CSV export matches the table row count.
-- [ ] **Validation check:** insert 5 known test submissions; `SELECT count(*)` in Supabase = 5,
+Checked locally against the live Supabase project (browser + automated). The remaining
+unchecked item needs the deployed app.
+
+- [x] Submitting a form with invalid input shows the right inline error and blocks submit.
+- [x] Submitting valid input creates exactly one row in `submissions` with the expected JSON.
+- [x] The admin page lists all submissions and CSV export matches the table row count.
+- [x] **Validation check:** insert 5 known test submissions; `SELECT count(*)` in Supabase = 5,
       and the JSON of each matches what was typed.
-- [ ] The `anon` key cannot read submissions (verify RLS blocks `SELECT`).
-- [ ] App runs on a clean machine from the README alone.
+- [x] The `anon` key cannot read submissions (verify RLS blocks `SELECT`).
+- [ ] App runs on a clean machine from the README alone. *(verify on the deployed app)*
 
 ## 8. Out of scope (v1)
 
